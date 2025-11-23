@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { fetchMetrics, BackendMetrics } from '../config/api'
+import { fetchMetrics, fetchDailyMetrics, BackendMetrics, DailyMetrics } from '../config/api'
 
 interface Metrics {
   activeUsers: number
   recipesGenerated: number
   avgRecipeTime: number
   pantryItemsAdded: number
+  averageWeeklyRecipesPerUser: number
 }
 
 interface ChartData {
@@ -25,72 +26,94 @@ interface UseMetricsReturn {
 /**
  * Convert backend metrics to dashboard format
  */
-const mapBackendMetricsToDashboard = (backendMetrics: BackendMetrics): Metrics => ({
-  activeUsers: backendMetrics.totalUsers,
-  recipesGenerated: backendMetrics.totalRecipes,
-  avgRecipeTime: Math.round((backendMetrics.averageGenerationTimeMs / 1000) * 10) / 10, // Convert ms to seconds, round to 1 decimal
-  pantryItemsAdded: backendMetrics.totalPantryItems,
-})
-
-/**
- * Generate mock chart data
- * TODO: Replace with real API endpoint when backend provides time-series data
- */
-const generateMockChartData = (): ChartData => {
-  // Generate last 7 days of data
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (6 - i))
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  })
+const mapBackendMetricsToDashboard = (backendMetrics: BackendMetrics): Metrics => {
+  // Handle average_weekly_recipes_per_user - may be undefined/null if no data exists
+  const avgWeeklyRecipes = backendMetrics.average_weekly_recipes_per_user;
+  const averageWeeklyRecipesPerUser = (avgWeeklyRecipes !== null && avgWeeklyRecipes !== undefined && !isNaN(avgWeeklyRecipes))
+    ? Math.round(avgWeeklyRecipes * 10) / 10
+    : 0; // Default to 0 if not available
 
   return {
-    recipesOverTime: dates.map((date, i) => ({
-      date,
-      recipes: Math.floor(Math.random() * 2000) + 1000 + i * 100,
+    activeUsers: backendMetrics.totalUsers,
+    recipesGenerated: backendMetrics.totalRecipes,
+    avgRecipeTime: Math.round((backendMetrics.averageGenerationTimeMs / 1000) * 10) / 10, // Convert ms to seconds, round to 1 decimal
+    pantryItemsAdded: backendMetrics.totalPantryItems,
+    averageWeeklyRecipesPerUser,
+  }
+}
+
+/**
+ * Convert daily metrics to chart data format
+ */
+const mapDailyMetricsToChartData = (dailyMetrics: DailyMetrics): ChartData => {
+  return {
+    recipesOverTime: dailyMetrics.dailyBreakdown.map((day) => ({
+      date: day.dateFormatted,
+      recipes: day.recipesGenerated,
     })),
-    usersOverTime: dates.map((date, i) => ({
-      date,
-      users: Math.floor(Math.random() * 500) + 1500 + i * 50,
+    usersOverTime: dailyMetrics.dailyBreakdown.map((day) => ({
+      date: day.dateFormatted,
+      users: day.activeUsers,
     })),
-    recipeTimeDistribution: [
-      { period: 'Mon', avgTime: 3.1 },
-      { period: 'Tue', avgTime: 3.3 },
-      { period: 'Wed', avgTime: 3.0 },
-      { period: 'Thu', avgTime: 3.4 },
-      { period: 'Fri', avgTime: 3.2 },
-      { period: 'Sat', avgTime: 3.5 },
-      { period: 'Sun', avgTime: 3.1 },
-    ],
-    pantryItemsOverTime: dates.map((date, i) => ({
-      date,
-      items: Math.floor(Math.random() * 3000) + 2000 + i * 200,
-    })),
+    // Recipe time distribution and pantry items not available in daily endpoint
+    // Keeping as empty arrays - these charts can be removed or updated when backend provides this data
+    recipeTimeDistribution: [],
+    pantryItemsOverTime: [],
+  }
+}
+
+/**
+ * Generate fallback chart data if daily metrics fail
+ */
+const generateFallbackChartData = (): ChartData => {
+  return {
+    recipesOverTime: [],
+    usersOverTime: [],
+    recipeTimeDistribution: [],
+    pantryItemsOverTime: [],
   }
 }
 
 export const useMetrics = (): UseMetricsReturn => {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
-  const [chartData, setChartData] = useState<ChartData>(generateMockChartData())
+  const [chartData, setChartData] = useState<ChartData>(generateFallbackChartData())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadMetrics = async () => {
+      setIsLoading(true)
+      setError(null)
+      
+      let mainMetricsSuccess = false
+      
+      // Fetch main metrics
       try {
-        setIsLoading(true)
-        setError(null)
-        
         const backendMetrics = await fetchMetrics()
+        console.log('Backend metrics received:', backendMetrics)
+        console.log('average_weekly_recipes_per_user value:', backendMetrics.average_weekly_recipes_per_user)
         const dashboardMetrics = mapBackendMetricsToDashboard(backendMetrics)
-        
         setMetrics(dashboardMetrics)
-        // Chart data remains mock until backend provides time-series endpoints
-        setChartData(generateMockChartData())
+        mainMetricsSuccess = true
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch metrics'
         setError(errorMessage)
-        console.error('Error fetching metrics:', err)
+        console.error('Error fetching main metrics:', err)
+      }
+      
+      // Fetch daily metrics separately - don't fail entire load if this fails
+      try {
+        const dailyMetrics = await fetchDailyMetrics()
+        const chartDataFromDaily = mapDailyMetricsToChartData(dailyMetrics)
+        setChartData(chartDataFromDaily)
+      } catch (err) {
+        console.error('Error fetching daily metrics:', err)
+        // Set fallback chart data if daily metrics fail
+        setChartData(generateFallbackChartData())
+        // Only set error if main metrics also failed
+        if (!mainMetricsSuccess) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch metrics')
+        }
       } finally {
         setIsLoading(false)
       }

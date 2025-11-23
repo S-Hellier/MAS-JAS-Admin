@@ -1,4 +1,4 @@
-import { Users, ChefHat, Clock, ShoppingCart, TrendingUp, TrendingDown } from 'lucide-react'
+import { Users, ChefHat, Clock, ShoppingCart, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
 import { useMetrics } from '../hooks/useMetrics'
 
 interface MetricCardProps {
@@ -44,8 +44,8 @@ const MetricsOverview = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        {[...Array(5)].map((_, i) => (
           <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
@@ -75,34 +75,40 @@ const MetricsOverview = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
       <MetricCard
         title="Active Users"
         value={metrics.activeUsers.toLocaleString()}
-        change={12.5}
         icon={<Users className="w-6 h-6 text-primary-600" />}
         color="bg-primary-50"
       />
       <MetricCard
         title="Recipes Generated"
         value={metrics.recipesGenerated.toLocaleString()}
-        change={8.3}
         icon={<ChefHat className="w-6 h-6 text-green-600" />}
         color="bg-green-50"
       />
       <MetricCard
         title="Avg Recipe Time"
         value={`${metrics.avgRecipeTime}s`}
-        change={-5.2}
         icon={<Clock className="w-6 h-6 text-orange-600" />}
         color="bg-orange-50"
       />
       <MetricCard
         title="Pantry Items Added"
         value={metrics.pantryItemsAdded.toLocaleString()}
-        change={15.7}
         icon={<ShoppingCart className="w-6 h-6 text-purple-600" />}
         color="bg-purple-50"
+      />
+      <MetricCard
+        title="Avg Recipes/Week per User"
+        value={
+          metrics.averageWeeklyRecipesPerUser !== null && metrics.averageWeeklyRecipesPerUser !== undefined && !isNaN(metrics.averageWeeklyRecipesPerUser)
+            ? metrics.averageWeeklyRecipesPerUser.toFixed(1)
+            : 'N/A'
+        }
+        icon={<Calendar className="w-6 h-6 text-indigo-600" />}
+        color="bg-indigo-50"
       />
     </div>
   )

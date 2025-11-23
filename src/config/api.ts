@@ -14,7 +14,34 @@ export interface BackendMetrics {
   totalPantryItems: number
   totalRecipes: number
   averageGenerationTimeMs: number
-  average_weekly_recipes_per_user: number
+  average_weekly_recipes_per_user?: number | null // Optional - may not be present if no data exists
+  timestamp: string
+}
+
+export interface DailyBreakdown {
+  date: string
+  dateFormatted: string
+  recipesGenerated: number
+  activeUsers: number
+  cumulativeRecipes: number
+  cumulativeUsers: number
+}
+
+export interface DailyMetricsSummary {
+  totalRecipes: number
+  totalActiveUsers: number
+  averageRecipesPerDay: number
+  averageActiveUsersPerDay: number
+  recipesGrowthPercent: number
+}
+
+export interface DailyMetrics {
+  dailyBreakdown: DailyBreakdown[]
+  summary: DailyMetricsSummary
+  dateRange: {
+    startDate: string
+    endDate: string
+  }
   timestamp: string
 }
 
@@ -41,6 +68,34 @@ export async function fetchMetrics(): Promise<BackendMetrics> {
 
   if (!data.success || !data.data) {
     throw new Error(data.error || 'Failed to fetch metrics')
+  }
+
+  return data.data
+}
+
+/**
+ * Fetch daily growth metrics from the admin API
+ */
+export async function fetchDailyMetrics(): Promise<DailyMetrics> {
+  const response = await fetch(`${API_BASE_URL}/metrics/daily`, {
+    method: 'GET',
+    headers: {
+      'x-admin-api-key': ADMIN_API_KEY,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized - Invalid admin API key')
+    }
+    throw new Error(`Failed to fetch daily metrics: ${response.statusText}`)
+  }
+
+  const data: ApiResponse<DailyMetrics> = await response.json()
+
+  if (!data.success || !data.data) {
+    throw new Error(data.error || 'Failed to fetch daily metrics')
   }
 
   return data.data
