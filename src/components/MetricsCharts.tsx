@@ -2,7 +2,20 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { useMetrics } from '../hooks/useMetrics'
 
 const MetricsCharts = () => {
-  const { chartData } = useMetrics()
+  const { chartData, isLoading, error } = useMetrics()
+
+  if (isLoading || error) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

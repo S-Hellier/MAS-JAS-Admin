@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { fetchMetrics, BackendMetrics } from '../config/api'
 
 interface Metrics {
   activeUsers: number
@@ -15,19 +16,26 @@ interface ChartData {
 }
 
 interface UseMetricsReturn {
-  metrics: Metrics
+  metrics: Metrics | null
   chartData: ChartData
   isLoading: boolean
+  error: string | null
 }
 
-// Mock data generator - replace with actual API calls later
-const generateMockMetrics = (): Metrics => ({
-  activeUsers: 12450,
-  recipesGenerated: 89320,
-  avgRecipeTime: 3.2,
-  pantryItemsAdded: 156780,
+/**
+ * Convert backend metrics to dashboard format
+ */
+const mapBackendMetricsToDashboard = (backendMetrics: BackendMetrics): Metrics => ({
+  activeUsers: backendMetrics.totalUsers,
+  recipesGenerated: backendMetrics.totalRecipes,
+  avgRecipeTime: Math.round((backendMetrics.averageGenerationTimeMs / 1000) * 10) / 10, // Convert ms to seconds, round to 1 decimal
+  pantryItemsAdded: backendMetrics.totalPantryItems,
 })
 
+/**
+ * Generate mock chart data
+ * TODO: Replace with real API endpoint when backend provides time-series data
+ */
 const generateMockChartData = (): ChartData => {
   // Generate last 7 days of data
   const dates = Array.from({ length: 7 }, (_, i) => {
@@ -62,30 +70,40 @@ const generateMockChartData = (): ChartData => {
 }
 
 export const useMetrics = (): UseMetricsReturn => {
-  const [metrics, setMetrics] = useState<Metrics>(generateMockMetrics())
+  const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [chartData, setChartData] = useState<ChartData>(generateMockChartData())
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate API call - replace with actual API call later
-    const fetchMetrics = async () => {
-      setIsLoading(true)
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      
-      setMetrics(generateMockMetrics())
-      setChartData(generateMockChartData())
-      setIsLoading(false)
+    const loadMetrics = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const backendMetrics = await fetchMetrics()
+        const dashboardMetrics = mapBackendMetricsToDashboard(backendMetrics)
+        
+        setMetrics(dashboardMetrics)
+        // Chart data remains mock until backend provides time-series endpoints
+        setChartData(generateMockChartData())
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch metrics'
+        setError(errorMessage)
+        console.error('Error fetching metrics:', err)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    fetchMetrics()
+    loadMetrics()
 
-    // Refresh data every 30 seconds (optional)
-    const interval = setInterval(fetchMetrics, 30000)
+    // Refresh data every 30 seconds
+    const interval = setInterval(loadMetrics, 30000)
     return () => clearInterval(interval)
   }, [])
 
-  return { metrics, chartData, isLoading }
+  return { metrics, chartData, isLoading, error }
 }
 
 

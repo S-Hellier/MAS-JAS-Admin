@@ -40,7 +40,39 @@ const MetricCard = ({ title, value, change, icon, color }: MetricCardProps) => {
 }
 
 const MetricsOverview = () => {
-  const { metrics } = useMetrics()
+  const { metrics, isLoading, error } = useMetrics()
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl mb-8">
+        <p className="font-semibold">Error loading metrics</p>
+        <p className="text-sm mt-1">{error}</p>
+        <p className="text-sm mt-2">Please check that the backend is running and the API key is correct.</p>
+      </div>
+    )
+  }
+
+  if (!metrics) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-6 py-4 rounded-xl mb-8">
+        <p>No metrics data available</p>
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
