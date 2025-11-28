@@ -1,8 +1,8 @@
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { useMetrics } from '../hooks/useMetrics'
 
 const MetricsCharts = () => {
-  const { chartData, isLoading, error } = useMetrics()
+  const { chartData, isLoading } = useMetrics()
 
   if (isLoading) {
     return (
@@ -40,15 +40,8 @@ const MetricsCharts = () => {
             <LineChart data={chartData.recipesOverTime}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              <YAxis 
-                domain={['auto', 'auto']}
-                allowDecimals={false}
-                tickFormatter={(value) => value.toLocaleString()}
-              />
-              <Tooltip 
-                formatter={(value: number) => value.toLocaleString()}
-                labelFormatter={(label) => `Date: ${label}`}
-              />
+              <YAxis />
+              <Tooltip />
               <Legend />
               <Line type="monotone" dataKey="recipes" stroke="#0ea5e9" strokeWidth={2} name="Recipes" />
             </LineChart>
@@ -64,15 +57,8 @@ const MetricsCharts = () => {
             <LineChart data={chartData.usersOverTime}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              <YAxis 
-                domain={['auto', 'auto']}
-                allowDecimals={false}
-                tickFormatter={(value) => value.toLocaleString()}
-              />
-              <Tooltip 
-                formatter={(value: number) => value.toLocaleString()}
-                labelFormatter={(label) => `Date: ${label}`}
-              />
+              <YAxis />
+              <Tooltip />
               <Legend />
               <Line type="monotone" dataKey="users" stroke="#10b981" strokeWidth={2} name="Active Users" />
             </LineChart>

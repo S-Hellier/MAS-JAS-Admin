@@ -102,11 +102,7 @@ const MetricsOverview = () => {
       />
       <MetricCard
         title="Avg Recipes/Week per User"
-        value={
-          metrics.averageWeeklyRecipesPerUser !== null && metrics.averageWeeklyRecipesPerUser !== undefined && !isNaN(metrics.averageWeeklyRecipesPerUser)
-            ? metrics.averageWeeklyRecipesPerUser.toFixed(1)
-            : 'N/A'
-        }
+        value={metrics.averageWeeklyRecipesPerUser.toFixed(1)}
         icon={<Calendar className="w-6 h-6 text-indigo-600" />}
         color="bg-indigo-50"
       />

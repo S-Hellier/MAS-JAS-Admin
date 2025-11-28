@@ -1,32 +1,62 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect, useRef } from 'react'
 import { ChefHat } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
 
-interface LoginProps {
-  onLogin: () => void
-}
-
-const Login = ({ onLogin }: LoginProps) => {
+const Login = () => {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { signIn, isLoading: authLoading, user, isAdmin } = useAuth()
+  const hasNavigatedRef = useRef(false)
+
+  // Navigate to dashboard when user becomes authenticated (only once)
+  useEffect(() => {
+    // Only navigate if:
+    // 1. User is authenticated
+    // 2. Not currently loading
+    // 3. Haven't already navigated
+    // 4. Not already on dashboard (check window.location to avoid unnecessary redirects)
+    if (user && isAdmin && !authLoading && !isSubmitting && !hasNavigatedRef.current) {
+      const currentPath = window.location.pathname
+      if (currentPath !== '/dashboard') {
+        hasNavigatedRef.current = true
+        // Use window.location for a hard redirect - more reliable than useNavigate
+        window.location.href = '/dashboard'
+      }
+    }
+  }, [user, isAdmin, authLoading, isSubmitting])
+
+  // Reset navigation flag when user logs out
+  useEffect(() => {
+    if (!user || !isAdmin) {
+      hasNavigatedRef.current = false
+    }
+  }, [user, isAdmin])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    setIsLoading(true)
+    setIsSubmitting(true)
 
-    // Simulate API call - replace with actual authentication later
-    setTimeout(() => {
-      // For demo purposes, accept any non-empty credentials
-      if (email && password) {
-        onLogin()
+    try {
+      const result = await signIn(email)
+      
+      if (result.error) {
+        setError(result.error.message || 'Failed to sign in. Please check your email and try again.')
+        setIsSubmitting(false)
       } else {
-        setError('Please enter both email and password')
+        // Login successful - state will be updated by useAuth hook
+        // Navigation will be handled by useEffect
+        setIsSubmitting(false)
       }
-      setIsLoading(false)
-    }, 500)
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('An unexpected error occurred. Please try again.')
+      setIsSubmitting(false)
+    }
   }
+
+  const isLoading = isSubmitting || authLoading
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
@@ -39,10 +69,16 @@ const Login = ({ onLogin }: LoginProps) => {
           <p className="text-gray-600 mt-2">Sign in to access the admin panel</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+          
+          {isLoading && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+              Signing in...
             </div>
           )}
 
@@ -58,21 +94,8 @@ const Login = ({ onLogin }: LoginProps) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition"
               placeholder="admin@example.com"
               required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition"
-              placeholder="Enter your password"
-              required
+              autoComplete="email"
+              disabled={isLoading}
             />
           </div>
 
@@ -86,7 +109,7 @@ const Login = ({ onLogin }: LoginProps) => {
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Demo: Enter any email and password to continue
+          Only users with admin privileges can access this dashboard
         </p>
       </div>
     </div>
