@@ -1,11 +1,30 @@
 // API Configuration
 // In Vite, environment variables must be prefixed with VITE_
-// Base URL should NOT include /admin - login endpoint is public
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
-// Remove /admin if it was accidentally included
-export const API_BASE_URL = BASE_URL.replace(/\/admin$/, '')
+// 
+// VITE_API_BASE_URL can be:
+// - Full path with /api/v1: https://backend.vercel.app/api/v1
+// - Base URL only: https://backend.vercel.app (will auto-append /api/v1)
+//
+// For local development: http://localhost:3001/api/v1 or http://localhost:3001
+// For production: https://your-backend.vercel.app/api/v1 or https://your-backend.vercel.app
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+// Remove /admin if it was accidentally included, and remove trailing slash
+let baseUrl = BASE_URL.replace(/\/admin$/, '').replace(/\/$/, '')
+// Auto-append /api/v1 if not already present
+if (!baseUrl.includes('/api/v1')) {
+  baseUrl = `${baseUrl}/api/v1`
+}
+export const API_BASE_URL = baseUrl
 export const ADMIN_API_BASE_URL = `${API_BASE_URL}/admin`
 export const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || 'e10fc184265409b7d72607f511d2421c5beefdb6a06b5699be33eaccf8c3e222'
+
+// Log API configuration in development (helps with debugging)
+if (import.meta.env.DEV) {
+  console.log('[API Config] VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'not set (using default)')
+  console.log('[API Config] API_BASE_URL:', API_BASE_URL)
+  console.log('[API Config] ADMIN_API_BASE_URL:', ADMIN_API_BASE_URL)
+  console.log('[API Config] Login endpoint will be:', `${API_BASE_URL}/auth/login`)
+}
 
 export interface ApiResponse<T> {
   success: boolean
@@ -96,23 +115,44 @@ export async function loginUser(email: string): Promise<User> {
     
     const errorMessage = errorData.error || errorData.message || errorText
     
-    // Check if this is the authentication error (backend still protecting login endpoint)
-    if (errorMessage.includes('Authentication required') || 
-        errorMessage.includes('x-admin-api-key') || 
-        errorMessage.includes('x-user-id')) {
-      console.error('Login endpoint authentication error:', {
-        url,
-        status: response.status,
-        error: errorMessage,
-      })
+    // Enhanced logging for 401 errors
+    console.error('Login request failed:', {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      errorMessage,
+      errorData,
+      requestBody: { email },
+    })
+    
+    // Handle 401 Unauthorized specifically
+    if (response.status === 401) {
+      // Check if this is the authentication error (backend still protecting login endpoint)
+      if (errorMessage.includes('Authentication required') || 
+          errorMessage.includes('x-admin-api-key') || 
+          errorMessage.includes('x-user-id') ||
+          errorMessage.includes('Unauthorized') ||
+          errorMessage.includes('authentication')) {
+        console.error('Login endpoint authentication error (401):', {
+          url,
+          status: response.status,
+          error: errorMessage,
+        })
+        throw new Error(
+          `Backend Configuration Issue: The login endpoint at ${url} is still protected.\n\n` +
+          `Expected: Public endpoint (no authentication required)\n` +
+          `Actual: Endpoint requires authentication (401 Unauthorized)\n\n` +
+          `Please verify in your backend:\n` +
+          `1. The route '/api/v1/auth/login' is registered BEFORE any admin middleware\n` +
+          `2. The route is NOT under '/api/v1/admin/*' paths\n` +
+          `3. The route is NOT protected by authentication middleware\n` +
+          `4. Test with: curl -X POST ${url} -H "Content-Type: application/json" -d '{"email":"test@example.com"}'`
+        )
+      }
+      
+      // 401 could also mean invalid email/user
       throw new Error(
-        `Backend Configuration Issue: The login endpoint at ${url} is still protected.\n\n` +
-        `Expected: Public endpoint (no authentication required)\n` +
-        `Actual: Endpoint requires authentication\n\n` +
-        `Please verify in your backend:\n` +
-        `1. The route '/api/v1/auth/login' is registered BEFORE any admin middleware\n` +
-        `2. The route is NOT under '/api/v1/admin/*' paths\n` +
-        `3. Test with: curl -X POST ${url} -H "Content-Type: application/json" -d '{"email":"test@example.com"}'`
+        `Login failed: ${errorMessage || 'Invalid email or user not found. Please check your email and try again.'}`
       )
     }
     

@@ -40,20 +40,37 @@ npm install
 ```
 
 2. Set up environment variables:
-```bash
-# Copy the example environment file
-cp .env.example .env
 
-# Edit .env and update if needed (defaults are set for local development)
-```
+Create a `.env` file in the root directory:
 
-The `.env` file should contain:
+**For local development (backend on localhost):**
 ```env
-VITE_API_BASE_URL=http://localhost:3001/api/v1/admin
-VITE_ADMIN_API_KEY=e10fc184265409b7d72607f511d2421c5beefdb6a06b5699be33eaccf8c3e222
+# Option 1: Base URL (recommended - code will auto-append /api/v1)
+VITE_API_BASE_URL=http://localhost:3001
+
+# Option 2: Full path (also works)
+VITE_API_BASE_URL=http://localhost:3001/api/v1
 ```
 
-3. Ensure your backend API is running on `http://localhost:3001`
+**For production (deployed backend on Vercel):**
+```env
+# Option 1: Base URL (recommended - code will auto-append /api/v1)
+VITE_API_BASE_URL=https://your-backend.vercel.app
+
+# Option 2: Full path (also works)
+VITE_API_BASE_URL=https://your-backend.vercel.app/api/v1
+```
+
+Replace `your-backend.vercel.app` with your actual Vercel backend URL.
+
+**Note:** 
+- The code automatically appends `/api/v1` if it's not already in the URL
+- Do NOT include `/admin` at the end - the code will automatically append `/admin` for admin endpoints
+- Do NOT include a trailing slash
+
+3. Ensure your backend API is running:
+   - **Local development**: Backend should be running on `http://localhost:3001`
+   - **Production**: Your backend should be deployed and accessible at the URL you specified in `VITE_API_BASE_URL`
 
 4. Start the development server:
 ```bash
@@ -70,7 +87,9 @@ npm run build
 
 The built files will be in the `dist` directory.
 
-**Important**: Update `VITE_API_BASE_URL` in your `.env` file to point to your production backend URL before building.
+**Important**: 
+- Update `VITE_API_BASE_URL` in your `.env` file to point to your production backend URL before building
+- If deploying to Vercel, also set `VITE_API_BASE_URL` as an environment variable in your Vercel project settings
 
 ## Project Structure
 

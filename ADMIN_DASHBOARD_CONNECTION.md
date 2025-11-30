@@ -9,11 +9,67 @@ This guide explains how to connect your admin dashboard codebase to the backend 
 - **Production**: Update this to your production backend URL
 
 ### Authentication
-All admin endpoints require an API key to be sent in the request header:
+
+Admin endpoints support **two authentication methods**:
+
+#### Method 1: API Key Authentication (for external services)
 - **Header Name**: `x-admin-api-key`
 - **API Key**: `e10fc184265409b7d72607f511d2421c5beefdb6a06b5699be33eaccf8c3e222`
+- **Use Case**: External dashboards, monitoring services, automated scripts
+- ⚠️ **Important**: Store this API key securely in your admin dashboard's environment variables. Never commit it to version control.
 
-⚠️ **Important**: Store this API key securely in your admin dashboard's environment variables. Never commit it to version control.
+#### Method 2: User-Based Authentication (for admin dashboard with login)
+- **Header Name**: `x-user-id`
+- **Requirement**: User must have `is_admin = true` in the database
+- **Use Case**: Admin dashboard where users log in with their credentials
+- **How it works**: 
+  1. User logs in via `/api/v1/auth/login`
+  2. Verify admin status via `/api/v1/admin/auth/verify`
+  3. Include `x-user-id` header in all admin API requests
+
+**Both methods work** - choose the one that fits your use case. For a separate admin dashboard with user login, use Method 2.
+
+### Admin Dashboard Authentication Flow
+
+If you're building an admin dashboard where users log in, follow this flow:
+
+```typescript
+// Step 1: User logs in
+const loginResponse = await fetch('http://localhost:3001/api/v1/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'admin@example.com' }),
+});
+
+const { user } = await loginResponse.json();
+
+// Step 2: Verify user is an admin (REQUIRED)
+const verifyResponse = await fetch('http://localhost:3001/api/v1/admin/auth/verify', {
+  method: 'GET',
+  headers: {
+    'x-user-id': user.id,
+    'Content-Type': 'application/json',
+  },
+});
+
+const verifyData = await verifyResponse.json();
+
+if (!verifyData.success || !verifyData.data.is_admin) {
+  // User is NOT an admin - deny access
+  throw new Error('Admin access required');
+}
+
+// Step 3: User is verified as admin - make authenticated requests
+const metricsResponse = await fetch('http://localhost:3001/api/v1/admin/metrics', {
+  method: 'GET',
+  headers: {
+    'x-user-id': user.id,  // User-based auth
+    'Content-Type': 'application/json',
+  },
+});
+```
+
+**Important**: Always verify admin status after login. Non-admin users will receive 403 Forbidden when accessing admin endpoints.
 
 ## Available Endpoints
 
@@ -215,6 +271,8 @@ console.log(`Users generate an average of ${avgWeeklyRecipes} recipes per week`)
 
 ### JavaScript/TypeScript (Fetch API)
 
+#### Using API Key Authentication
+
 ```typescript
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'e10fc184265409b7d72607f511d2421c5beefdb6a06b5699be33eaccf8c3e222';
 const API_BASE_URL = 'http://localhost:3001/api/v1/admin';
@@ -248,6 +306,106 @@ fetchAllMetrics().then(metrics => {
   console.log('Total Recipes:', metrics.data.totalRecipes);
   console.log('Avg Weekly Recipes Per User:', metrics.data.averageWeeklyRecipesPerUser);
 });
+```
+
+#### Using User-Based Authentication (for Admin Dashboard)
+
+```typescript
+const API_BASE_URL = 'http://localhost:3001/api/v1';
+const ADMIN_API_BASE_URL = `${API_BASE_URL}/admin`;
+
+// Admin API client with user-based authentication
+class AdminDashboardApi {
+  private userId: string | null = null;
+
+  // Set user ID after login
+  setUserId(userId: string) {
+    this.userId = userId;
+  }
+
+  // Verify user is admin
+  async verifyAdminStatus(): Promise<boolean> {
+    if (!this.userId) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const response = await fetch(`${ADMIN_API_BASE_URL}/auth/verify`, {
+        method: 'GET',
+        headers: {
+          'x-user-id': this.userId,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      return data.success && data.data.is_admin === true;
+    } catch (error) {
+      console.error('Error verifying admin status:', error);
+      return false;
+    }
+  }
+
+  // Make authenticated admin API request
+  private async makeRequest(endpoint: string, options: RequestInit = {}) {
+    if (!this.userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'x-user-id': this.userId,  // User-based auth
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (response.status === 403) {
+      throw new Error('Admin access denied');
+    }
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async fetchAllMetrics() {
+    return this.makeRequest('/metrics');
+  }
+
+  async fetchDailyMetrics() {
+    return this.makeRequest('/metrics/daily');
+  }
+
+  async fetchRecipeMetrics() {
+    return this.makeRequest('/metrics/recipes');
+  }
+}
+
+// Usage example
+const adminApi = new AdminDashboardApi();
+
+// After user logs in
+const loginResponse = await fetch(`${API_BASE_URL}/auth/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'admin@example.com' }),
+});
+
+const { user } = await loginResponse.json();
+adminApi.setUserId(user.id);
+
+// Verify admin status
+const isAdmin = await adminApi.verifyAdminStatus();
+if (!isAdmin) {
+  throw new Error('Admin access required');
+}
+
+// Now make authenticated requests
+const metrics = await adminApi.fetchAllMetrics();
 ```
 
 ### JavaScript/TypeScript (Axios)
@@ -472,6 +630,8 @@ export function useAdminMetrics() {
 
 If authentication fails or an error occurs, you'll receive an error response:
 
+### API Key Authentication Errors
+
 ```json
 {
   "success": false,
@@ -479,10 +639,22 @@ If authentication fails or an error occurs, you'll receive an error response:
 }
 ```
 
+### User-Based Authentication Errors
+
+```json
+{
+  "success": false,
+  "error": "Admin access required. This user does not have admin privileges."
+}
+```
+
 **HTTP Status Codes**:
 - `200`: Success
-- `401`: Unauthorized (invalid or missing API key)
+- `401`: Unauthorized (invalid or missing API key/user ID)
+- `403`: Forbidden (user is not an admin)
 - `500`: Internal server error
+
+**Note**: When using user-based authentication, a 403 response means the user is authenticated but doesn't have admin privileges. Handle this by redirecting to login or showing an access denied message.
 
 ## CORS Configuration
 
@@ -492,14 +664,27 @@ The backend is configured to allow all origins in development mode. For producti
 
 In your admin dashboard codebase, create a `.env` file:
 
+### For API Key Authentication (External Services)
+
 ```env
 ADMIN_API_KEY=e10fc184265409b7d72607f511d2421c5beefdb6a06b5699be33eaccf8c3e222
 API_BASE_URL=http://localhost:3001/api/v1/admin
 ```
 
-**For production**, update `API_BASE_URL` to your production backend URL.
+### For User-Based Authentication (Admin Dashboard with Login)
+
+```env
+API_BASE_URL=http://localhost:3001/api/v1
+ADMIN_API_BASE_URL=http://localhost:3001/api/v1/admin
+```
+
+**For production**, update URLs to your production backend URL.
+
+**Note**: For user-based authentication, you don't need the `ADMIN_API_KEY` in your frontend code. The user ID is obtained after login and stored in session storage or state management.
 
 ## Testing the Connection
+
+### Testing with API Key
 
 You can test the connection using curl:
 
@@ -509,11 +694,42 @@ curl -X GET http://localhost:3001/api/v1/admin/metrics \
   -H "Content-Type: application/json"
 ```
 
-Or using a tool like Postman or Insomnia:
+### Testing with User-Based Authentication
+
+First, get a user ID by logging in:
+
+```bash
+# Step 1: Login
+curl -X POST http://localhost:3001/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com"}'
+
+# Response will include user.id - use that in step 2
+
+# Step 2: Verify admin status
+curl -X GET http://localhost:3001/api/v1/admin/auth/verify \
+  -H "x-user-id: YOUR_USER_ID_HERE" \
+  -H "Content-Type: application/json"
+
+# Step 3: Make authenticated request
+curl -X GET http://localhost:3001/api/v1/admin/metrics \
+  -H "x-user-id: YOUR_USER_ID_HERE" \
+  -H "Content-Type: application/json"
+```
+
+### Using Postman or Insomnia
+
+**For API Key Authentication:**
 1. Set the request method to `GET`
 2. Set the URL to `http://localhost:3001/api/v1/admin/metrics`
 3. Add a header: `x-admin-api-key` with the API key value
 4. Send the request
+
+**For User-Based Authentication:**
+1. First, make a POST request to `http://localhost:3001/api/v1/auth/login` with email in body
+2. Copy the `user.id` from the response
+3. Make a GET request to `http://localhost:3001/api/v1/admin/auth/verify` with `x-user-id` header
+4. If verified, make requests to admin endpoints with `x-user-id` header
 
 ## Notes
 
