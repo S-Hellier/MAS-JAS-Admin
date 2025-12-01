@@ -40,7 +40,12 @@ const MetricsCharts = () => {
             <LineChart data={chartData.recipesOverTime}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E1D8" />
               <XAxis dataKey="date" stroke="#5F6B5A" />
-              <YAxis stroke="#5F6B5A" />
+              <YAxis 
+                stroke="#5F6B5A" 
+                domain={[0, 'auto']}
+                allowDecimals={false}
+                tick={{ fill: '#5F6B5A' }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: '#FFFFFF', 
@@ -64,7 +69,12 @@ const MetricsCharts = () => {
             <LineChart data={chartData.usersOverTime}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E1D8" />
               <XAxis dataKey="date" stroke="#5F6B5A" />
-              <YAxis stroke="#5F6B5A" />
+              <YAxis 
+                stroke="#5F6B5A" 
+                domain={[0, 'auto']}
+                allowDecimals={false}
+                tick={{ fill: '#5F6B5A' }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: '#FFFFFF', 
