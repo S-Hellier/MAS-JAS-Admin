@@ -59,31 +59,31 @@ const Login = () => {
   const isLoading = isSubmitting || authLoading
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-primary-100 p-4 rounded-full mb-4">
-            <ChefHat className="w-12 h-12 text-primary-600" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-base">
+      <div className="bg-background-surface rounded-xl shadow-heavy p-xxxl w-full max-w-md">
+        <div className="flex flex-col items-center mb-xxl">
+          <div className="bg-primary-light p-base rounded-full mb-base">
+            <ChefHat className="w-12 h-12 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Sign in to access the admin panel</p>
+          <h1 className="text-display font-bold text-text-primary">Pantry Partner</h1>
+          <p className="text-body text-text-secondary mt-base">Admin Dashboard</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+        <form onSubmit={handleSubmit} className="space-y-xl" noValidate>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">
-              <strong>Error:</strong> {error}
+            <div className="bg-status-error/10 border border-status-error/30 text-status-error px-base py-md rounded-lg" role="alert">
+              <strong className="font-semibold">Error:</strong> {error}
             </div>
           )}
           
           {isLoading && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+            <div className="bg-status-info/10 border border-status-info/30 text-status-info px-base py-md rounded-lg">
               Signing in...
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-label font-medium text-text-primary mb-sm">
               Email Address
             </label>
             <input
@@ -91,7 +91,7 @@ const Login = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition"
+              className="w-full px-base py-md border border-border rounded-lg focus:ring-2 focus:ring-border-focus focus:border-border-focus outline-none transition text-body text-text-primary placeholder:text-placeholder disabled:bg-disabled disabled:cursor-not-allowed"
               placeholder="admin@example.com"
               required
               autoComplete="email"
@@ -102,13 +102,13 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-accent text-text-inverse py-md rounded-lg font-semibold hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed text-button"
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-xl text-center text-body-small text-text-tertiary">
           Only users with admin privileges can access this dashboard
         </p>
       </div>

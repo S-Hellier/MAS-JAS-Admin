@@ -1,11 +1,11 @@
-# MAS-JAS Admin Dashboard
+# Pantry Partner Admin Dashboard
 
-A modern, web-based admin dashboard for managing and monitoring the MAS-JAS mobile app - a pantry management and recipe generation tool.
+A modern, web-based admin dashboard for managing and monitoring the Pantry Partner mobile app - a pantry management and recipe generation tool.
 
 ## Features
 
 - **Admin Authentication**: Secure login system (currently using mock authentication)
-- **Backend Integration**: Connected to the MAS-JAS backend API for real-time metrics
+- **Backend Integration**: Connected to the Pantry Partner backend API for real-time metrics
 - **Metrics Dashboard**: Real-time metrics display including:
   - Active Users (Total Users)
   - Recipes Generated (Total Recipes)

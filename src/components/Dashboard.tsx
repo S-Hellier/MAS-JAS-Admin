@@ -8,18 +8,19 @@ interface DashboardProps {
 
 const Dashboard = ({ onLogout }: DashboardProps) => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-background-surface shadow-light border-b border-border">
+        <div className="max-w-7xl mx-auto px-base sm:px-xl lg:px-xxl">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <ChefHat className="w-8 h-8 text-primary-600" />
-              <h1 className="text-2xl font-bold text-gray-900">MAS-JAS Admin</h1>
+            <div className="flex items-center space-x-md">
+              <ChefHat className="w-8 h-8 text-primary" />
+              <h1 className="text-h1 font-bold text-text-primary">Pantry Partner</h1>
+              <span className="text-body-small text-text-tertiary ml-sm">Admin Dashboard</span>
             </div>
             <button
               onClick={onLogout}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center space-x-sm px-base py-sm text-text-secondary hover:bg-primary-light/20 rounded-lg transition font-medium"
             >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>
@@ -29,10 +30,10 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Dashboard Overview</h2>
-          <p className="text-gray-600 mt-2">Monitor your app's performance and user engagement</p>
+      <main className="max-w-7xl mx-auto px-base sm:px-xl lg:px-xxl py-xxl">
+        <div className="mb-xxl">
+          <h2 className="text-h1 font-bold text-text-primary">Dashboard Overview</h2>
+          <p className="text-body text-text-secondary mt-base">Monitor your app's performance and user engagement</p>
         </div>
 
         {/* Metrics Overview Cards */}

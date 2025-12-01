@@ -6,11 +6,11 @@ const MetricsCharts = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-xl">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+          <div key={i} className="bg-background-surface rounded-lg shadow-light border border-border p-base animate-pulse">
+            <div className="h-6 bg-disabled rounded w-1/3 mb-base"></div>
+            <div className="h-64 bg-disabled rounded"></div>
           </div>
         ))}
       </div>
@@ -23,27 +23,34 @@ const MetricsCharts = () => {
 
   if (!hasRecipesData && !hasUsersData) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-6 py-4 rounded-xl">
-        <p className="font-semibold">No chart data available</p>
-        <p className="text-sm mt-1">Daily metrics data is not available. Please check your backend connection.</p>
+      <div className="bg-status-warning/10 border border-status-warning/30 text-status-warning px-xl py-base rounded-lg">
+        <p className="font-semibold text-body">No chart data available</p>
+        <p className="text-body-small mt-sm">Daily metrics data is not available. Please check your backend connection.</p>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-xl">
       {/* Recipes Generated Over Time */}
       {hasRecipesData && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recipes Generated (Last 7 Days)</h3>
+        <div className="bg-background-surface rounded-lg shadow-light border border-border p-base">
+          <h3 className="text-h3 font-semibold text-text-primary mb-base">Recipes Generated (Last 7 Days)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData.recipesOverTime}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E1D8" />
+              <XAxis dataKey="date" stroke="#5F6B5A" />
+              <YAxis stroke="#5F6B5A" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#FFFFFF', 
+                  border: '1px solid #E5E1D8',
+                  borderRadius: '10px',
+                  color: '#2D3A28'
+                }} 
+              />
               <Legend />
-              <Line type="monotone" dataKey="recipes" stroke="#0ea5e9" strokeWidth={2} name="Recipes" />
+              <Line type="monotone" dataKey="recipes" stroke="#7C9070" strokeWidth={2} name="Recipes" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -51,16 +58,23 @@ const MetricsCharts = () => {
 
       {/* Active Users Over Time */}
       {hasUsersData && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Users (Last 7 Days)</h3>
+        <div className="bg-background-surface rounded-lg shadow-light border border-border p-base">
+          <h3 className="text-h3 font-semibold text-text-primary mb-base">Active Users (Last 7 Days)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData.usersOverTime}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E1D8" />
+              <XAxis dataKey="date" stroke="#5F6B5A" />
+              <YAxis stroke="#5F6B5A" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#FFFFFF', 
+                  border: '1px solid #E5E1D8',
+                  borderRadius: '10px',
+                  color: '#2D3A28'
+                }} 
+              />
               <Legend />
-              <Line type="monotone" dataKey="users" stroke="#10b981" strokeWidth={2} name="Active Users" />
+              <Line type="monotone" dataKey="users" stroke="#9AAA8E" strokeWidth={2} name="Active Users" />
             </LineChart>
           </ResponsiveContainer>
         </div>
